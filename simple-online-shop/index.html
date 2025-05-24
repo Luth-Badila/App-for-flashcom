@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Shopee Mini</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <!-- Overlay -->
+  <div id="overlay"></div>
+
+  <!-- Header -->
+  <header>
+    <h1 class="logo">MiniShopee</h1>
+    <div id="cart-icon">
+      <i class="fas fa-shopping-cart"></i>
+      <span id="cart-count">0</span>
+    </div>
+  </header>
+
+  <!-- Produk -->
+  <main class="product-list" id="product-list"></main>
+
+  <!-- Sidebar Cart -->
+  <aside class="cart-sidebar" id="cart-sidebar">
+    <div class="cart-header">
+      <h2>🛒 Keranjang</h2>
+      <button id="close-cart">&times;</button>
+    </div>
+    <ul id="cart-items"></ul>
+    <p class="total">Total: Rp <span id="total">0</span></p>
+    <button id="checkout">Checkout</button>
+  </aside>
+
+  <script src="api.js"></script>
+</body>
+</html>

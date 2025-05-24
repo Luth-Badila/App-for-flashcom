@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>To Do List using Supabase</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f0f0;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    input, button {
+      padding: 10px;
+      margin: 0.5rem 0;
+      width: 100%;
+      font-size: 1rem;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      padding: 10px;
+      margin: 8px 0;
+      background: #e9e9e9;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .completed {
+      text-decoration: line-through;
+      color: gray;
+    }
+    li button {
+      margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>To-Do List Using Supabase</h1>
+    <input type="text" id="task-input" placeholder="Enter new task..." />
+    <button id="add-task">Add Task</button>
+    <ul id="task-list"></ul>
+  </div>
+
+
+  <script src="env.js"></script>
+  <script>
+    const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const taskInput = document.getElementById('task-input');
+    const addBtn = document.getElementById('add-task');
+    const taskList = document.getElementById('task-list');
+
+    window.addEventListener('load', loadTasks);
+    addBtn.addEventListener('click', addTask);
+
+    async function loadTasks() {
+      const { data, error } = await client
+        .from('To do list')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        alert('Error loading tasks.');
+        console.error(error);
+        return;
+      }
+
+      taskList.innerHTML = '';
+      data.forEach(task => renderTask(task));
+    }
+
+    async function addTask() {
+      const taskText = taskInput.value.trim();
+      if (!taskText) return;
+
+      const { error } = await client
+        .from('To do list')
+        .insert([{ task: taskText }]);
+
+      if (error) {
+        alert('Error adding task.');
+        console.error(error);
+        return;
+      }
+
+      taskInput.value = '';
+      loadTasks();
+    }
+
+    function renderTask(task) {
+      const li = document.createElement('li');
+      if (task.is_done) li.classList.add('completed');
+
+      const taskText = document.createElement('span');
+      taskText.textContent = task.task;
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = task.is_done;
+      checkbox.addEventListener('change', () => toggleComplete(task.id, checkbox.checked));
+
+      const delBtn = document.createElement('button');
+      delBtn.textContent = '🗑️';
+      delBtn.addEventListener('click', () => deleteTask(task.id));
+
+      li.appendChild(checkbox);
+      li.appendChild(taskText);
+      li.appendChild(delBtn);
+      taskList.appendChild(li);
+    }
+
+    async function toggleComplete(id, isDone) {
+      const { error } = await client
+        .from('To do list')
+        .update({ is_done: isDone })
+        .eq('id', id);
+
+      if (error) {
+        alert('Error updating task.');
+        console.error(error);
+      }
+
+      loadTasks();
+    }
+
+    async function deleteTask(id) {
+      const { error } = await client
+        .from('To do list')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        alert('Error deleting task.');
+        console.error(error);
+      }
+
+      loadTasks();
+    }
+  </script>
+</body>
+</html>

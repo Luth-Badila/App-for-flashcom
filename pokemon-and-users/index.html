@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pokemon Card with JSONPlaceholder</title>
+</head>
+<style>
+  body {
+  font-family: Arial, sans-serif;
+  background-color: #f0f4f8;
+}
+
+.card-container {
+  padding: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.card {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  padding: 20px;
+  text-align: center;
+  width: 280px;
+  height: 250px;
+}
+
+.card img {
+  width: 120px;
+  height: 120px;
+}
+
+.card h2 {
+  text-transform: capitalize;
+  margin: 10px 0;
+}
+
+.card p {
+  color: #555;
+  margin: 5px 0;
+}
+
+</style>
+<body>
+  <div class="card-container" id="cardContainer">
+    <!-- Card akan muncul di sini -->
+  </div>
+
+ <script>
+  // document.addEventListener("DOMContentLoaded", () => {
+  //   const cardContainer = document.getElementById("cardContainer");
+  //   const totalCards = 10;
+
+  //   // Fungsi untuk mengambil data dari API
+  //   async function fetchData(pokemonId, userId) {
+  //     const pokemonRes = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonId}`);
+  //     const userRes = await fetch(`https://jsonplaceholder.typicode.com/users/${userId}`);
+
+  //     const pokemon = await pokemonRes.json();
+  //     const user = await userRes.json();
+  //     console.log(pokemon, user)
+
+  //     return { pokemon, user };
+  //   }
+
+  //   // Fungsi untuk membuat elemen card
+  //   function createCard(pokemon, user) {
+  //     const card = document.createElement("div");
+  //     card.className = "card";
+  //     card.innerHTML = `
+  //       <img src="${pokemon.sprites.front_default}" alt="${pokemon.name}" />
+  //       <h2>${pokemon.name}</h2>
+  //       <p><strong>Trainer:</strong> ${user.name}</p>
+  //       <p><strong>Email:</strong> ${user.email}</p>
+  //     `;
+  //     cardContainer.appendChild(card);
+  //   }
+
+  //   // Ambil dan tampilkan semua kartu
+  //   async function showCards() {
+  //     for (let i = 1; i <= totalCards; i++) {
+  //       // const pokemonId = Math.floor(Math.random() * 150) + 1;
+  //       // const userId = Math.floor(Math.random() * 10) + 1;
+
+  //       try {
+  //         const { pokemon, user } = await fetchData(pokemonId, userId);
+  //         createCard(pokemon, user);
+  //       } catch (error) {
+  //         console.error("Gagal memuat data:", error);
+  //       }
+  //     }
+  //   }
+
+  //   showCards();
+  // });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const cardContainer = document.getElementById("cardContainer");
+
+      // Ambil data Pokémon dan user berdasarkan ID 1-10
+      async function showCards() {
+        for (let i = 1; i <= 10; i++) {
+        const pokemonId = Math.floor(Math.random() * 150) + 1;
+         const userId = Math.floor(Math.random() * 10) + 1;
+          try {
+            const pokemonRes = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonId}`);
+            const userRes = await fetch(`https://jsonplaceholder.typicode.com/users/${userId}`);
+
+            const pokemon = await pokemonRes.json();
+            const user = await userRes.json();
+
+            const card = document.createElement("div");
+            card.className = "card";
+            card.innerHTML = `
+              <img src="${pokemon.sprites.front_default}" alt="${pokemon.name}" />
+              <h2>${pokemon.name}</h2>
+              <p><strong>Trainer:</strong> ${user.name}</p>
+              <p><strong>Email:</strong> ${user.email}</p>
+            `;
+            cardContainer.appendChild(card);
+          } catch (error) {
+            console.error("Gagal mengambil data untuk ID", i, error);
+          }
+        }
+      }
+
+      showCards();
+    });
+</script>
+
+</body>
+</html>

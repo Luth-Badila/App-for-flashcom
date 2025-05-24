@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Supabase Shop</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      background: #f5f5f5;
+    }
+
+    header {
+      background: green;
+      color: white;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-size: 1.5rem;
+    }
+
+    #cart-icon {
+      position: relative;
+      cursor: pointer;
+    }
+
+    #cart-count {
+      background: white;
+      color: green;
+      padding: 2px 6px;
+      font-weight: bold;
+      border-radius: 50%;
+      position: absolute;
+      top: -8px;
+      right: -10px;
+    }
+
+    .product-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1rem;
+      padding: 1rem;
+    }
+
+    .product-card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .product-card img {
+      height: 150px;
+      object-fit: contain;
+      margin-bottom: 0.5rem;
+    }
+
+    .product-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .product-title {
+      font-size: 0.9rem;
+      flex: 1;
+      margin-right: 8px;
+    }
+
+    button {
+      background: green;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    aside {
+      position: fixed;
+      top: 0;
+      right: -100%;
+      width: 320px;
+      height: 100vh;
+      background: white;
+      box-shadow: -2px 0 6px rgba(0,0,0,0.2);
+      transition: right 0.3s ease-in-out;
+      padding: 1rem;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+    }
+
+    aside.open {
+      right: 0;
+    }
+
+    .cart-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .cart-item img {
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+
+    .cart-item div {
+      flex: 1;
+    }
+
+    .total {
+      font-weight: bold;
+      margin: 1rem 0;
+    }
+
+    .remove-btn {
+      background: red;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Supabase Shop</div>
+  <div id="cart-icon">
+    🛒 <span id="cart-count">0</span>
+  </div>
+</header>
+
+<main class="product-list" id="product-list"></main>
+
+<aside id="cart-sidebar">
+  <div style="display: flex; justify-content: space-between; align-items: center;">
+    <h3>Keranjang</h3>
+    <button id="close-cart" style="background: none; border: none; font-size: 20px; cursor: pointer;">❌</button>
+  </div>
+  <div id="cart-items"></div>
+  <div class="total">Total: Rp <span id="total">0</span></div>
+  <button id="checkout">Checkout via WhatsApp</button>
+</aside>
+
+
+<script>
+  // 🔧 Ganti dengan kredensial Supabase kamu:
+  const SUPABASE_URL = "";
+  const SUPABASE_ANON_KEY = "";
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const productList = document.getElementById("product-list");
+  const cartSidebar = document.getElementById("cart-sidebar");
+  const cartIcon = document.getElementById("cart-icon");
+  const cartCount = document.getElementById("cart-count");
+  const cartItemsEl = document.getElementById("cart-items");
+  const totalEl = document.getElementById("total");
+  const checkoutBtn = document.getElementById("checkout");
+
+  let cart = [];
+
+  document.getElementById("close-cart").addEventListener("click", () => {
+  cartSidebar.classList.remove("open");
+});
+
+  async function fetchProducts() {
+    const { data, error } = await supabase.from("shop").select("*");
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    console.log(data);
+
+    data.forEach(product => {
+      const card = document.createElement("div");
+      card.className = "product-card";
+      card.innerHTML = `
+        <img src="${product.image}" alt="${product.title}" />
+        <div class="product-info">
+          <span class="product-title">${product.title}</span>
+          <button onclick='addToCart(${JSON.stringify(product)})'>+ Keranjang</button>
+        </div>
+        <p>Rp ${product.price.toLocaleString()}</p>
+      `;
+      productList.appendChild(card);
+    });
+  }
+
+  function addToCart(product) {
+    const exist = cart.find(item => item.id === product.id);
+    if (exist) {
+      exist.qty += 1;
+    } else {
+      cart.push({ ...product, qty: 1 });
+    }
+    renderCart();
+  }
+
+  function removeFromCart(id) {
+    cart = cart.filter(item => item.id !== id);
+    renderCart();
+  }
+
+  function renderCart() {
+    cartItemsEl.innerHTML = "";
+    let total = 0;
+    let count = 0;
+
+    cart.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "cart-item";
+      div.innerHTML = `
+        <img src="${item.image}" />
+        <div>
+          <div>${item.title} x${item.qty}</div>
+          <div>Rp ${(item.price * item.qty).toLocaleString()}</div>
+        </div>
+        <button class="remove-btn" onclick="removeFromCart(${item.id})">❌</button>
+      `;
+      cartItemsEl.appendChild(div);
+      total += item.price * item.qty;
+      count += item.qty;
+    });
+
+    totalEl.textContent = total.toLocaleString();
+    cartCount.textContent = count;
+  }
+
+  cartIcon.addEventListener("click", () => {
+    cartSidebar.classList.toggle("open");
+  });
+
+  checkoutBtn.addEventListener("click", () => {
+    if (cart.length === 0) {
+      alert("Keranjang kosong!");
+      return;
+    }
+
+    let msg = "Halo! Saya ingin memesan:\n";
+    cart.forEach(item => {
+      msg += `- ${item.title} x${item.qty} (Rp ${(item.price * item.qty).toLocaleString()})\n`;
+    });
+    msg += `\nTotal: Rp ${totalEl.textContent}`;
+    const encodedMsg = encodeURIComponent(msg);
+    const whatsappURL = `https://wa.me/6281234567890?text=${encodedMsg}`;
+    window.open(whatsappURL, "_blank");
+  });
+
+  fetchProducts();
+</script>
+
+</body>
+</html>

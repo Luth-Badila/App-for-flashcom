@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pokémon & User Cards</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<style>
+  body {
+  font-family: sans-serif;
+  background-color: #f0f0f0;
+  padding: 2rem;
+  text-align: center;
+}
+
+.loading {
+  font-size: 1.2rem;
+  color: #007bff;
+}
+
+.error {
+  color: red;
+  font-weight: bold;
+}
+
+.card-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  width: 180px;
+  padding: 1rem;
+  transition: transform 0.2s;
+}
+
+.card:hover {
+  transform: scale(1.05);
+}
+
+.card img {
+  width: 100px;
+  height: 100px;
+}
+
+.card h3 {
+  margin: 0.5rem 0 0.2rem;
+}
+
+.card p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+</style>
+<body>
+  <h1>Pokémon Cards with Users</h1>
+
+  <div id="loading" class="loading">Loading data...</div>
+  <div id="error" class="error"></div>
+  <div id="card-container" class="card-container"></div>
+
+  <script>
+const loading = document.getElementById('loading');
+const error = document.getElementById('error');
+const container = document.getElementById('card-container');
+
+async function fetchData() {
+  try {
+    const usersRes = await fetch('https://jsonplaceholder.typicode.com/users');
+    if (!usersRes.ok) throw new Error('Failed to fetch users');
+    const users = await usersRes.json();
+    console.log(users);
+
+    const pokeListRes = await fetch('https://pokeapi.co/api/v2/pokemon?limit=10');
+    if (!pokeListRes.ok) throw new Error('Failed to fetch Pokémon list');
+    const pokeList = await pokeListRes.json();
+
+
+    const pokemonData = await Promise.all(
+      pokeList.results.map(poke =>
+        fetch(poke.url).then(res => {
+          if (!res.ok) throw new Error(`Failed to fetch ${poke.name}`);
+          return res.json();
+        })
+      )
+    );
+
+    loading.style.display = 'none';
+
+    pokemonData.forEach((pokemon, i) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      card.innerHTML = `
+        <img src="${pokemon.sprites.front_default}" alt="${pokemon.name}">
+        <h3>${pokemon.name}</h3>
+        <p>User: ${users[i % users.length].name}</p>
+      `;
+
+      container.appendChild(card);
+    });
+  } catch (err) {
+    loading.style.display = 'none';
+    error.textContent = err.message;
+  }
+}
+
+fetchData();
+
+  </script>
+</body>
+</html>

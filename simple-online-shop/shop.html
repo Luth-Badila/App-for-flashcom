@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mini Shopee</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f6f6f6;
+    }
+
+    header {
+      background: #ee4d2d;
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 1001;
+    }
+
+    .logo {
+      font-size: 24px;
+    }
+
+    #cart-icon {
+      font-size: 22px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    #cart-count {
+      background: white;
+      color: #ee4d2d;
+      border-radius: 50%;
+      font-size: 12px;
+      padding: 2px 6px;
+      position: absolute;
+      top: -8px;
+      right: -12px;
+      font-weight: bold;
+    }
+
+    #overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(2px);
+      display: none;
+      z-index: 1000;
+    }
+
+    #overlay.show {
+      display: block;
+    }
+
+    .product-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .product-card {
+      background: white;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .product-card img {
+      width: 100%;
+      height: 130px;
+      object-fit: contain;
+    }
+
+    .product-info {
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .product-title {
+      font-size: 14px;
+      flex: 1;
+      margin-right: 10px;
+    }
+
+    .product-card p {
+      color: #ee4d2d;
+      font-weight: bold;
+      margin-top: 6px;
+    }
+
+    .product-card button {
+      background: #ee4d2d;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .cart-sidebar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 320px;
+      height: 100%;
+      background: white;
+      box-shadow: -4px 0 10px rgba(0, 0, 0, 0.3);
+      transform: translateX(100%);
+      transition: transform 0.3s ease-in-out;
+      padding: 20px;
+      z-index: 1002;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .cart-sidebar.open {
+      transform: translateX(0);
+    }
+
+    .cart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cart-header button {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: #ee4d2d;
+      cursor: pointer;
+    }
+
+    #cart-items {
+      flex-grow: 1;
+      margin: 15px 0;
+      overflow-y: auto;
+    }
+
+    #cart-items li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    #cart-items button {
+      background: none;
+      border: none;
+      color: #ee4d2d;
+      cursor: pointer;
+    }
+
+    .total {
+      font-weight: bold;
+      font-size: 16px;
+      margin: 10px 0;
+    }
+
+    #checkout {
+      padding: 10px;
+      background: #ee4d2d;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .cart-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .cart-item img {
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+
+    .cart-item .item-info {
+      flex-grow: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="overlay"></div>
+
+  <header>
+    <h1 class="logo">MiniShopee</h1>
+    <div id="cart-icon">
+      <i class="fas fa-shopping-cart"></i>
+      <span id="cart-count">0</span>
+    </div>
+  </header>
+
+  <main class="product-list" id="product-list"></main>
+
+  <aside class="cart-sidebar" id="cart-sidebar">
+    <div class="cart-header">
+      <h2>🛒 Keranjang</h2>
+      <button id="close-cart">&times;</button>
+    </div>
+    <ul id="cart-items"></ul>
+    <p class="total">Total: Rp <span id="total">0</span></p>
+    <button id="checkout">Checkout</button>
+  </aside>
+
+  <script>
+    const productList = document.getElementById("product-list");
+    const cartItems = document.getElementById("cart-items");
+    const totalEl = document.getElementById("total");
+    const cartIcon = document.getElementById("cart-icon");
+    const cartCount = document.getElementById("cart-count");
+    const cartSidebar = document.getElementById("cart-sidebar");
+    const closeCartBtn = document.getElementById("close-cart");
+    const checkoutBtn = document.getElementById("checkout");
+    const overlay = document.getElementById("overlay");
+
+    let cart = [];
+
+    async function fetchProducts() {
+      const res = await fetch("https://fakestoreapi.com/products");
+      const products = await res.json();
+
+      products.forEach(product => {
+        const div = document.createElement("div");
+        div.className = "product-card";
+
+        const img = document.createElement("img");
+        img.src = product.image;
+        img.alt = product.title;
+
+        const info = document.createElement("div");
+        info.className = "product-info";
+
+        const title = document.createElement("span");
+        title.className = "product-title";
+        title.textContent = product.title;
+
+        const addBtn = document.createElement("button");
+        addBtn.textContent = "+ Keranjang";
+        addBtn.onclick = function() {
+          addToCart(product);
+        };
+
+        info.appendChild(title);
+        info.appendChild(addBtn);
+
+        const price = document.createElement("p");
+        price.textContent = `Rp ${product.price.toLocaleString()}`;
+
+        div.appendChild(img);
+        div.appendChild(info);
+        div.appendChild(price);
+
+        productList.appendChild(div);
+      });
+    }
+
+    function addToCart(product) {
+      const existing = cart.find(item => item.id === product.id);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        cart.push({ ...product, qty: 1 });
+      }
+      renderCart();
+    }
+
+    function renderCart() {
+      cartItems.innerHTML = "";
+      let total = 0;
+      let count = 0;
+
+      cart.forEach(item => {
+        const li = document.createElement("li");
+        li.className = "cart-item";
+        li.innerHTML = `
+          <img src="${item.image}" alt="${item.title}" />
+          <div class="item-info">
+            <span>${item.title} x${item.qty}</span>
+            <div>
+              <span>Rp ${(item.price * item.qty).toLocaleString()}</span>
+              <button onclick="removeItem(${item.id})">&times;</button>
+            </div>
+          </div>
+        `;
+        cartItems.appendChild(li);
+        total += item.price * item.qty;
+        count += item.qty;
+      });
+
+      totalEl.textContent = total.toLocaleString();
+      cartCount.textContent = count;
+    }
+
+    function removeItem(id) {
+      cart = cart.filter(item => item.id !== id);
+      renderCart();
+    }
+
+    cartIcon.addEventListener("click", () => {
+      cartSidebar.classList.add("open");
+      overlay.classList.add("show");
+    });
+
+    closeCartBtn.addEventListener("click", () => {
+      cartSidebar.classList.remove("open");
+      overlay.classList.remove("show");
+    });
+
+    overlay.addEventListener("click", () => {
+      cartSidebar.classList.remove("open");
+      overlay.classList.remove("show");
+    });
+
+    checkoutBtn.addEventListener("click", () => {
+      if (cart.length === 0) {
+        alert("Keranjang kosong!");
+        return;
+      }
+
+      // Format pesan WhatsApp
+      let message = "Hai, saya ingin membeli barang berikut:\n\n";
+      cart.forEach(item => {
+        message += `${item.title} x${item.qty}\nHarga: Rp ${(item.price * item.qty).toLocaleString()}\n`;
+      });
+      message += `\nTotal: Rp ${totalEl.textContent}\n\nTerima kasih!`;
+
+      // Encode URL untuk WhatsApp
+      const encodedMessage = encodeURIComponent(message);
+      const phoneNumber = "6281917510630"; // Ganti dengan nomor WhatsApp yang kamu tuju
+      const whatsappLink = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+
+      // Buka WhatsApp dengan pesan otomatis
+      window.open(whatsappLink, "_blank");
+    });
+
+    fetchProducts();
+  </script>
+</body>
+</html>
